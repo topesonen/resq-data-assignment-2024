@@ -6,12 +6,12 @@ providers (id, defaultOfferType, country, registeredDate);
 users (id, country, registeredDate);
 
 */
--- Let's look a tthe data a bit
+-- Let's look a the data a bit
 SELECT * FROM orders LIMIT 5;
 SELECT * FROM providers LIMIT 5;
 SELECT * FROM users LIMIT 5;
 
-
+-- Check for duplicate ID. This is the primary key of the new table we'll create
 SELECT id, count(*) as countId
 FROM orders
 GROUP BY id
@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS presentation_table (
     segment TEXT
 );
 
-INSERT INTO presentation_table (id, userID, cohort, M1_retention, createdAt, sales, partner, segment)
+INSERT OR REPLACE INTO presentation_table (id, userID, cohort, M1_retention, createdAt, sales, partner, segment)
 SELECT 
     id,
     userID,    
