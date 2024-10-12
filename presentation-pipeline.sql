@@ -11,6 +11,13 @@ SELECT * FROM orders LIMIT 5;
 SELECT * FROM providers LIMIT 5;
 SELECT * FROM users LIMIT 5;
 
+
+SELECT id, count(*) as countId
+FROM orders
+GROUP BY id
+HAVING countId > 1;
+
+
 /*
 The analyst wants to make at least the following queries:
 
@@ -160,24 +167,26 @@ WHERE cohort = '2023-05';
 
 -- Everything looks good, let's create the output table
 CREATE TABLE IF NOT EXISTS presentation_table (
+    id INTEGER PRIMARY KEY,
     userID INTEGER,
     cohort TEXT,
     M1_retention INTEGER, -- This is actually a boolean!
-    id INTEGER,
     createdAt TEXT,
     sales REAL,
     partner INTEGER,
     segment TEXT
 );
-INSERT INTO presentation_table (userID, cohort, M1_retention, id, createdAt, sales, partner, segment)
+
+INSERT INTO presentation_table (id, userID, cohort, M1_retention, createdAt, sales, partner, segment)
 SELECT 
+    id,
     userID,    
     cohort,
     M1_retention,
-    id,
     createdAt,
     sales,
     partner,
     segment
 FROM final;
 
+SELECT * FROM presentation_table LIMIT 5;
