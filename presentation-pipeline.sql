@@ -26,11 +26,16 @@ The analyst wants to make at least the following queries:
 
 OUTPUT:
 one table to answer all the questions above
-customer_id, customer_cohort, partner_id, , segment, sales, createdAt
+
+columns needed to answer questions above:
+userID, cohort, M1_retention, id, sales, partner, segment 
+
+additional columns for CLV analysis:
+createdAt
 
 */
 
--- Let's begin by thinkikng what are the queries like that we need to answer the questions
+-- Let's begin by thinkikng what are the queries needed to answer the questions
 -- Top partners
 SELECT 
     o.providerId AS partner,
@@ -40,7 +45,7 @@ GROUP BY partner
 ORDER BY sales DESC
 LIMIT 10;
 
--- Favorite segments (by order count instead of sales!)
+-- Favorite segments (by order count instead of sales here!)
 SELECT 
     p.defaultOfferType AS segment,
     COUNT(o.id) as orderCount
@@ -52,7 +57,9 @@ ORDER BY orderCount DESC
 LIMIT 10;
 
 -- M1 retention
+-- Using a temp view for easier querying 
 CREATE TEMP VIEW retention_table AS
+-- Orders for each user ranked by their creation date - 1 is first order, 2 is second etc...
 WITH ranked_orders AS (
     SELECT 
         userId,
@@ -104,23 +111,29 @@ SELECT
 FROM retention_table;
 
 /*
-Now we've sorted the querys, how to create the pipeline?
+Now we've sorted the queries, let's create a final view that has the necessary columns we used before
 */
 CREATE TEMP VIEW final AS
 SELECT 
     rt.userId,
     rt.first AS cohort,
     rt.M1_retention,
+    o.id,
+    o.createdAt,
     o.sales,
     o.providerId as partner,
-    p.defaultOfferType
+    p.defaultOfferType as segment
 FROM
     orders o 
 INNER JOIN retention_table rt on o.userId = rt.userId
-INNER JOIN providers p on o.providerId = p.id 
---WHERE rt.first = '2023-05'
-;
+INNER JOIN providers p on o.providerId = p.id ;
 
+-- just checking how it looks 
+SELECT * FROM final
+LIMIT 5;
+
+-- Make sure we can answer the analyst's questions:
+-- Find the top 10 partners by sales
 SELECT 
     partner,
     sales
@@ -129,15 +142,42 @@ GROUP BY partner
 ORDER BY sales DESC
 LIMIT 10;
 
--- Create the output table
-CREATE TABLE IF NOT EXISTS output_table AS
+-- Customer's favorite segments
 SELECT 
-    id,    
-    createdAt
-FROM orders
-WHERE quantity > 2;
+    segment,
+    COUNT(id) as orderCount
+FROM final
+--WHERE o.userId = 833181563296211638 -- uncomment this line to see a specific user
+GROUP BY segment
+ORDER BY orderCount DESC
+LIMIT 10;
 
--- Display the results
+-- M1 retention given a cohort
+SELECT 
+    AVG(M1_retention) * 100 AS retention_rate_percent
+FROM final
+WHERE cohort = '2023-05';
 
---SELECT * FROM output_table LIMIT 10;
+-- Everything looks good, let's create the output table
+CREATE TABLE IF NOT EXISTS presentation_table (
+    userID INTEGER,
+    cohort TEXT,
+    M1_retention INTEGER, -- This is actually a boolean!
+    id INTEGER,
+    createdAt TEXT,
+    sales REAL,
+    partner INTEGER,
+    segment TEXT
+);
+INSERT INTO presentation_table (userID, cohort, M1_retention, id, createdAt, sales, partner, segment)
+SELECT 
+    userID,    
+    cohort,
+    M1_retention,
+    id,
+    createdAt,
+    sales,
+    partner,
+    segment
+FROM final;
 
