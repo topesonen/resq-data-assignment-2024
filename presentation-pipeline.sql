@@ -1,24 +1,9 @@
 /*
-Tables: 
+resq-data-assignment-2024
+Topias Pesonen
+topias.pesonen@gmail.com
 
-orders (id, createdAt, userId, quantity, refunded, currency, sales, providerId);
-providers (id, defaultOfferType, country, registeredDate);
-users (id, country, registeredDate);
-
-*/
--- Let's look a the data a bit
-SELECT * FROM orders LIMIT 5;
-SELECT * FROM providers LIMIT 5;
-SELECT * FROM users LIMIT 5;
-
--- Check for duplicate ID. This is the primary key of the new table we'll create
-SELECT id, count(*) as countId
-FROM orders
-GROUP BY id
-HAVING countId > 1;
-
-
-/*
+PROBLEM:
 The analyst wants to make at least the following queries:
 
 - find the top 10 partners by sales
@@ -34,6 +19,13 @@ The analyst wants to make at least the following queries:
 OUTPUT:
 one table to answer all the questions above
 
+Tables: 
+
+orders (id, createdAt, userId, quantity, refunded, currency, sales, providerId);
+providers (id, defaultOfferType, country, registeredDate);
+users (id, country, registeredDate);
+
+
 columns needed to answer questions above:
 userID, cohort, M1_retention, id, sales, partner, segment 
 
@@ -41,8 +33,23 @@ additional columns for CLV analysis:
 createdAt
 
 */
+----------------------------------------
+-- Let's take a look at the data
+----------------------------------------
+SELECT * FROM orders LIMIT 5;
+SELECT * FROM providers LIMIT 5;
+SELECT * FROM users LIMIT 5;
 
--- Let's begin by thinkikng what are the queries needed to answer the questions
+-- Check for duplicate ID. This is the primary key of the new table we'll create
+SELECT id, count(*) as countId
+FROM orders
+GROUP BY id
+HAVING countId > 1;
+
+
+--------------------------------------------------------------------------------------------------------
+-- Next, it could be useful to begin by thinkikng what are the queries needed to answer the questions
+--------------------------------------------------------------------------------------------------------
 -- Top partners
 SELECT 
     o.providerId AS partner,
@@ -112,7 +119,7 @@ LEFT JOIN second_orders s ON f.userId = s.userId;
 SELECT * FROM retention_table
 LIMIT 10;
 
--- Average of the boolean = M1 retention rate of the customer base (who've made at least one order!)
+-- Average of the boolean = M1 retention rate of the customer base
 SELECT 
     AVG(M1_retention) * 100 AS retention_rate_percent
 FROM retention_table;
@@ -164,8 +171,9 @@ SELECT
     AVG(M1_retention) * 100 AS retention_rate_percent
 FROM final
 WHERE cohort = '2023-05';
-
--- Everything looks good, let's create the output table
+-----------------------------------------------------------------------------------
+-- Everything looks good, let's create the output table and insert from final view
+-----------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS presentation_table (
     id INTEGER PRIMARY KEY,
     userID INTEGER,
@@ -189,4 +197,6 @@ SELECT
     segment
 FROM final;
 
+
+-- Final output check
 SELECT * FROM presentation_table LIMIT 5;
